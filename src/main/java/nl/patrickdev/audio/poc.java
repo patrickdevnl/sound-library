@@ -42,7 +42,7 @@ public class poc {
         }
 
 
-        AudioFormat af = new AudioFormat(SAMPLES_PER_MINUTE, BITS_PER_SAMPLE,  CHANNELS, SIGNED, BIG_ENDIAN);
+        AudioFormat af = new AudioFormat(SAMPLES_PER_MINUTE, BITS_PER_SAMPLE, CHANNELS, SIGNED, BIG_ENDIAN);
         SourceDataLine sdl = AudioSystem.getSourceDataLine(af);
 
         sdl.open(af);
