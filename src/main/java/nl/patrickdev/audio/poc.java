@@ -1,42 +1,56 @@
 package nl.patrickdev.audio;
 
+import nl.patrickdev.audio.notegenerator.NoteGenerator;
+import nl.patrickdev.audio.notegenerator.VaderJacob;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
-import java.util.Random;
 
 public class poc {
-    public static void main(String[] args) throws LineUnavailableException, InterruptedException {
-        int sampleRate = 88200;
-        int bitsPerSample = 8;
-        int channels = 1;
-        boolean signed = true;
-        boolean bigEndian = true;
+    private static final double SECONDS_PER_MINUTE = 60;
 
-        int notes = 100;
-        int duration = 10;
-        int samplesPerNote = sampleRate / notes * duration;
-        byte[] data = new byte[sampleRate * duration];
-        Random r = new Random();
-        for (int note = 0; note < notes; note++) {
-            double hertz = 220 * Math.pow(13d / 12d, r.nextInt(40));
-            for (int sample = 0; sample < samplesPerNote; sample++) {
-                double progressThroughWave = sample / (sampleRate / hertz);
+    private static final int SAMPLES_PER_MINUTE = 28000;
+    private static final int BITS_PER_SAMPLE = 8;
+    private static final int CHANNELS = 1;
+    private static final boolean SIGNED = true;
+    private static final boolean BIG_ENDIAN = true;
+
+    public static void main(String[] args) throws LineUnavailableException, InterruptedException {
+        double beatsPerMinute = 120;
+
+        NoteGenerator song = new VaderJacob();
+        Note[] notes = song.getNotes();
+        double duration = SECONDS_PER_MINUTE / beatsPerMinute * song.getDuration();
+
+        byte[] data = new byte[(int) (SAMPLES_PER_MINUTE * duration)];
+
+        int done = 0;
+
+        for (Note note : notes) {
+            double hertz = note.getFrequency();
+            int samples = (int) (60 / beatsPerMinute * note.getDuration() * SAMPLES_PER_MINUTE);
+
+            for (int sample = 0; sample < samples; sample++) {
+                double progressThroughWave = sample / (SAMPLES_PER_MINUTE / hertz);
                 double value = Math.sin(progressThroughWave * Math.PI);
-                data[sample + note * samplesPerNote] = (byte) (value * 127);
+                data[sample + done] = (byte) (value * 127);
             }
+
+            done += samples;
         }
 
 
-        AudioFormat af = new AudioFormat(sampleRate, bitsPerSample, channels, signed, bigEndian);
+        AudioFormat af = new AudioFormat(SAMPLES_PER_MINUTE, BITS_PER_SAMPLE,  CHANNELS, SIGNED, BIG_ENDIAN);
         SourceDataLine sdl = AudioSystem.getSourceDataLine(af);
+
         sdl.open(af);
 
         sdl.start();
 
-        sdl.write(data, 0, sampleRate * duration);
-        Thread.sleep((duration + 1) * 1000);
+        sdl.write(data, 0, data.length);
+        Thread.sleep((long) ((duration + 1) * 1000));
 
 
     }
